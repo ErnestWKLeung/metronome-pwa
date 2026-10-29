@@ -11,6 +11,7 @@
     beatUnit: 4, // denominator; 6/8 → eighth-note pulse
     subdivision: 0, // 0=off, 2=half, 3=triplet
     swing: false, // only meaningful when subdivision === 2
+    swingRatio: 2, // long:short = N:1; presets 1|2|3; default 2:1
     playing: false,
     beatIndex: 0,
     nextNoteTime: 0,
@@ -40,6 +41,8 @@
     subdivs: Array.from(document.querySelectorAll(".btn-subdiv")),
     swingToggle: document.getElementById("swing-toggle"),
     swingHint: document.getElementById("swing-hint"),
+    swingRatio: document.getElementById("swing-ratio"),
+    ratios: Array.from(document.querySelectorAll(".btn-ratio")),
     installSection: document.getElementById("install-section"),
     installBtn: document.getElementById("install-btn"),
     installHowto: document.getElementById("install-howto"),
@@ -254,7 +257,11 @@
 
       // Subdivision clicks between main pulses (lighter)
       if (state.subdivision === 2) {
-        const offset = swingActive() ? (2 / 3) * T : T / 2;
+        let offset = T / 2;
+        if (swingActive()) {
+          const r = state.swingRatio === 1 || state.swingRatio === 3 ? state.swingRatio : 2;
+          offset = (r / (r + 1)) * T; // 1:1→T/2, 2:1→2T/3, 3:1→3T/4
+        }
         scheduleClick(beatStart + offset, "sub");
       } else if (state.subdivision === 3) {
         scheduleClick(beatStart + T / 3, "sub");
@@ -304,18 +311,28 @@
 
   function updateSwingUi() {
     const halfOn = state.subdivision === 2;
+    const swingOn = halfOn && state.swing;
     if (el.swingToggle) {
       el.swingToggle.disabled = !halfOn;
-      const on = halfOn && state.swing;
-      el.swingToggle.classList.toggle("is-active", on);
-      el.swingToggle.setAttribute("aria-pressed", on ? "true" : "false");
-      el.swingToggle.textContent = on ? "Swing · 開啟" : "Swing · 關閉";
+      el.swingToggle.classList.toggle("is-active", swingOn);
+      el.swingToggle.setAttribute("aria-pressed", swingOn ? "true" : "false");
+      el.swingToggle.textContent = swingOn ? "Swing · 開啟" : "Swing · 關閉";
     }
     if (el.swingHint) {
       el.swingHint.textContent = halfOn
-        ? "Swing 固定 2:1（長∶短）"
-        : "Swing 只喺「半拍」時可用（固定 2:1）";
+        ? (swingOn ? "長∶短比例（半拍內第二下）" : "開 Swing 後可揀 1:1／2:1／3:1")
+        : "Swing 只喺「半拍」時可用";
     }
+    if (el.swingRatio) {
+      el.swingRatio.hidden = !swingOn;
+    }
+    el.ratios.forEach((btn) => {
+      const r = Number(btn.dataset.ratio);
+      const active = r === state.swingRatio;
+      btn.classList.toggle("is-active", active);
+      btn.setAttribute("aria-pressed", active ? "true" : "false");
+      btn.disabled = !swingOn;
+    });
   }
 
   function setSubdivision(n) {
@@ -339,6 +356,12 @@
     } else {
       state.swing = !!on;
     }
+    updateSwingUi();
+  }
+
+  function setSwingRatio(n) {
+    if (n === 1 || n === 2 || n === 3) state.swingRatio = n;
+    else state.swingRatio = 2;
     updateSwingUi();
   }
 
@@ -443,6 +466,13 @@
         setSwing(!state.swing);
       });
     }
+    el.ratios.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (!swingActive()) return;
+        ensureAudio();
+        setSwingRatio(Number(btn.dataset.ratio));
+      });
+    });
 
     // Resume AudioContext on first gesture anywhere
     const unlock = () => {
