@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="節拍器" />
+  <meta name="description" content="簡潔節拍器 PWA — BPM、拍號、點拍定速、離線可用" />
+  <title>節拍器 · Metronome</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>節拍器</h1>
+      <p class="subtitle">Metronome</p>
+    </header>
+
+    <section class="bpm-section" aria-labelledby="bpm-label">
+      <div class="bpm-display" id="bpm-label">
+        <span class="bpm-value" id="bpm-value" aria-live="polite">120</span>
+        <span class="bpm-unit">BPM</span>
+      </div>
+
+      <div class="bpm-controls">
+        <button type="button" class="btn btn-round" id="bpm-down" aria-label="減少 BPM">−</button>
+        <input
+          type="range"
+          id="bpm-slider"
+          class="bpm-slider"
+          min="40"
+          max="240"
+          value="120"
+          step="1"
+          aria-label="BPM 滑桿"
+        />
+        <button type="button" class="btn btn-round" id="bpm-up" aria-label="增加 BPM">＋</button>
+      </div>
+
+      <div class="bpm-fine">
+        <button type="button" class="btn btn-chip" id="bpm-down-5" aria-label="減少 5 BPM">−5</button>
+        <button type="button" class="btn btn-chip" id="bpm-up-5" aria-label="增加 5 BPM">＋5</button>
+      </div>
+    </section>
+
+    <section class="tap-section">
+      <button type="button" class="btn btn-tap" id="tap-tempo" aria-label="點拍定速">
+        點拍定速<br /><span class="btn-sub">Tap Tempo</span>
+      </button>
+    </section>
+
+    <section class="meter-section" aria-labelledby="meter-label">
+      <h2 id="meter-label" class="section-title">拍號 · Time Signature</h2>
+      <div class="meter-grid" role="group" aria-label="選擇拍號">
+        <button type="button" class="btn btn-meter" data-beats="2" data-unit="4" aria-pressed="false">2/4</button>
+        <button type="button" class="btn btn-meter" data-beats="3" data-unit="4" aria-pressed="false">3/4</button>
+        <button type="button" class="btn btn-meter is-active" data-beats="4" data-unit="4" aria-pressed="true">4/4</button>
+        <button type="button" class="btn btn-meter" data-beats="6" data-unit="8" aria-pressed="false">6/8</button>
+      </div>
+    </section>
+
+    <section class="beat-section" aria-label="拍點視覺">
+      <div class="beat-dots" id="beat-dots" role="status" aria-live="off"></div>
+      <p class="beat-hint">第 1 拍為強拍（較高音／較大聲）</p>
+    </section>
+
+    <section class="transport">
+      <button type="button" class="btn btn-play" id="play-stop" aria-label="開始" aria-pressed="false">
+        <span id="play-stop-label">開始 · Play</span>
+      </button>
+    </section>
+
+    <aside class="note" role="note">
+      <strong>iOS 注意：</strong>Safari／主畫面 App 喺切去背景或鎖屏後，系統多數會暫停音訊。本 App 會盡力保持 AudioContext，但背景播放唔保證。建議練習時保持畫面喺前景。
+    </aside>
+
+    <footer class="footer">
+      <p>可「加入主畫面」離線使用 · Add to Home Screen</p>
+    </footer>
+  </div>
+  <script src="app.js" defer></script>
+</body>
+</html>
