@@ -9,6 +9,8 @@
     bpm: BPM_DEFAULT,
     beatsPerBar: 4,
     beatUnit: 4, // denominator; 6/8 → eighth-note pulse
+    subdivision: 0, // 0=off, 2=half, 3=triplet
+    swing: false, // only meaningful when subdivision === 2
     playing: false,
     beatIndex: 0,
     nextNoteTime: 0,
@@ -35,6 +37,9 @@
     playStopLabel: document.getElementById("play-stop-label"),
     beatDots: document.getElementById("beat-dots"),
     meters: Array.from(document.querySelectorAll(".btn-meter")),
+    subdivs: Array.from(document.querySelectorAll(".btn-subdiv")),
+    swingToggle: document.getElementById("swing-toggle"),
+    swingHint: document.getElementById("swing-hint"),
     installSection: document.getElementById("install-section"),
     installBtn: document.getElementById("install-btn"),
     installHowto: document.getElementById("install-howto"),
@@ -92,11 +97,6 @@
         deferredInstall = null;
         el.installBtn.hidden = true;
       });
-    }
-
-    // iOS has no beforeinstallprompt — keep howto visible (already in HTML)
-    if (!isIos() && el.installHowto) {
-      // On desktop Chrome howto still useful as fallback until prompt fires
     }
   }
 
@@ -178,18 +178,37 @@
   }
 
   /**
-   * Synthesize a short click. Strong beat = higher pitch + louder.
+   * Synthesize a short click.
+   * kind: "strong" | "weak" | "sub"
+   * Subdivision clicks are quieter / softer than main beats.
    */
-  function scheduleClick(time, isStrong) {
+  function scheduleClick(time, kind) {
     const ctx = ensureAudio();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
 
-    const freq = isStrong ? 1200 : 800;
-    const peak = isStrong ? 0.55 : 0.28;
-    const dur = isStrong ? 0.045 : 0.03;
+    let freq;
+    let peak;
+    let dur;
+    let type = "square";
 
-    osc.type = "square";
+    if (kind === "strong") {
+      freq = 1200;
+      peak = 0.55;
+      dur = 0.045;
+    } else if (kind === "weak") {
+      freq = 800;
+      peak = 0.28;
+      dur = 0.03;
+    } else {
+      // subdivision — lighter than weak main beat
+      freq = 1600;
+      peak = 0.1;
+      dur = 0.018;
+      type = "sine";
+    }
+
+    osc.type = type;
     osc.frequency.setValueAtTime(freq, time);
 
     gain.gain.setValueAtTime(0.0001, time);
@@ -217,14 +236,32 @@
     });
   }
 
+  function swingActive() {
+    return state.subdivision === 2 && state.swing;
+  }
+
   function scheduler() {
     if (!state.playing) return;
     const ctx = ensureAudio();
     while (state.nextNoteTime < ctx.currentTime + SCHEDULE_AHEAD) {
+      const beatStart = state.nextNoteTime;
+      const T = pulseSeconds();
       const isStrong = state.beatIndex === 0;
-      scheduleClick(state.nextNoteTime, isStrong);
-      scheduleVisual(state.beatIndex, state.nextNoteTime);
-      state.nextNoteTime += pulseSeconds();
+
+      // Main beat accent (strong/weak pattern preserved)
+      scheduleClick(beatStart, isStrong ? "strong" : "weak");
+      scheduleVisual(state.beatIndex, beatStart);
+
+      // Subdivision clicks between main pulses (lighter)
+      if (state.subdivision === 2) {
+        const offset = swingActive() ? (2 / 3) * T : T / 2;
+        scheduleClick(beatStart + offset, "sub");
+      } else if (state.subdivision === 3) {
+        scheduleClick(beatStart + T / 3, "sub");
+        scheduleClick(beatStart + (2 * T) / 3, "sub");
+      }
+
+      state.nextNoteTime += T;
       state.beatIndex = (state.beatIndex + 1) % state.beatsPerBar;
     }
     state.timerId = setTimeout(scheduler, LOOKAHEAD_MS);
@@ -237,7 +274,6 @@
       dot.className = "beat-dot" + (i === 0 ? " is-strong" : "");
       dot.setAttribute("aria-hidden", "true");
       if (i === 0) {
-        // Accessible shape cue: strong beats get a square-ish via border-radius override
         dot.style.borderRadius = "6px";
         dot.title = "強拍";
       } else {
@@ -264,6 +300,46 @@
       btn.setAttribute("aria-pressed", active ? "true" : "false");
     });
     renderDots();
+  }
+
+  function updateSwingUi() {
+    const halfOn = state.subdivision === 2;
+    if (el.swingToggle) {
+      el.swingToggle.disabled = !halfOn;
+      const on = halfOn && state.swing;
+      el.swingToggle.classList.toggle("is-active", on);
+      el.swingToggle.setAttribute("aria-pressed", on ? "true" : "false");
+      el.swingToggle.textContent = on ? "Swing · 開啟" : "Swing · 關閉";
+    }
+    if (el.swingHint) {
+      el.swingHint.textContent = halfOn
+        ? "Swing 固定 2:1（長∶短）"
+        : "Swing 只喺「半拍」時可用（固定 2:1）";
+    }
+  }
+
+  function setSubdivision(n) {
+    const next = n === 2 || n === 3 ? n : 0;
+    state.subdivision = next;
+    if (next !== 2) {
+      // Spec: when not half-beat, treat swing as off (control disabled)
+      state.swing = false;
+    }
+    el.subdivs.forEach((btn) => {
+      const active = Number(btn.dataset.subdiv) === next;
+      btn.classList.toggle("is-active", active);
+      btn.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+    updateSwingUi();
+  }
+
+  function setSwing(on) {
+    if (state.subdivision !== 2) {
+      state.swing = false;
+    } else {
+      state.swing = !!on;
+    }
+    updateSwingUi();
   }
 
   async function start() {
@@ -354,6 +430,19 @@
         setMeter(Number(btn.dataset.beats), Number(btn.dataset.unit));
       });
     });
+    el.subdivs.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        ensureAudio();
+        setSubdivision(Number(btn.dataset.subdiv));
+      });
+    });
+    if (el.swingToggle) {
+      el.swingToggle.addEventListener("click", () => {
+        if (state.subdivision !== 2) return;
+        ensureAudio();
+        setSwing(!state.swing);
+      });
+    }
 
     // Resume AudioContext on first gesture anywhere
     const unlock = () => {
@@ -383,6 +472,7 @@
 
   setBpm(BPM_DEFAULT);
   setMeter(4, 4);
+  setSubdivision(0);
   bind();
   setupInstallPrompt();
   registerSW();

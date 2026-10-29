@@ -64,9 +64,31 @@
       </div>
     </section>
 
+    <section class="subdiv-section" aria-labelledby="subdiv-label">
+      <h2 id="subdiv-label" class="section-title">細分 · Subdivision</h2>
+      <div class="subdiv-grid" role="group" aria-label="選擇細分">
+        <button type="button" class="btn btn-subdiv is-active" data-subdiv="0" aria-pressed="true">關</button>
+        <button type="button" class="btn btn-subdiv" data-subdiv="2" aria-pressed="false">半拍</button>
+        <button type="button" class="btn btn-subdiv" data-subdiv="3" aria-pressed="false">三連音</button>
+      </div>
+      <div class="swing-row">
+        <button
+          type="button"
+          class="btn btn-swing"
+          id="swing-toggle"
+          aria-pressed="false"
+          aria-label="Swing"
+          disabled
+        >
+          Swing · 關閉
+        </button>
+        <p class="swing-hint" id="swing-hint">Swing 只喺「半拍」時可用（固定 2:1）</p>
+      </div>
+    </section>
+
     <section class="beat-section" aria-label="拍點視覺">
       <div class="beat-dots" id="beat-dots" role="status" aria-live="off"></div>
-      <p class="beat-hint">第 1 拍為強拍（較高音／較大聲）</p>
+      <p class="beat-hint">第 1 拍為強拍（較高音／較大聲）；細分 click 較輕</p>
     </section>
 
     <section class="transport">

@@ -1,5 +1,5 @@
 /* Metronome PWA — basic offline app-shell cache */
-const CACHE = "metronome-pwa-v1";
+const CACHE = "metronome-pwa-v2";
 const ASSETS = [
   "./",
   "./index.html",
