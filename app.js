@@ -35,7 +35,70 @@
     playStopLabel: document.getElementById("play-stop-label"),
     beatDots: document.getElementById("beat-dots"),
     meters: Array.from(document.querySelectorAll(".btn-meter")),
+    installSection: document.getElementById("install-section"),
+    installBtn: document.getElementById("install-btn"),
+    installHowto: document.getElementById("install-howto"),
+    installDone: document.getElementById("install-done"),
   };
+
+  let deferredInstall = null;
+
+  function isStandalone() {
+    return (
+      window.matchMedia("(display-mode: standalone)").matches ||
+      window.navigator.standalone === true
+    );
+  }
+
+  function isIos() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  }
+
+  function setupInstallPrompt() {
+    if (!el.installSection) return;
+
+    if (isStandalone()) {
+      el.installSection.classList.add("is-standalone");
+      if (el.installDone) el.installDone.hidden = false;
+      if (el.installHowto) el.installHowto.hidden = true;
+      if (el.installBtn) el.installBtn.hidden = true;
+      return;
+    }
+
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault();
+      deferredInstall = e;
+      if (el.installBtn) el.installBtn.hidden = false;
+    });
+
+    window.addEventListener("appinstalled", () => {
+      deferredInstall = null;
+      if (el.installBtn) el.installBtn.hidden = true;
+      el.installSection.classList.add("is-standalone");
+      if (el.installDone) el.installDone.hidden = false;
+      if (el.installHowto) el.installHowto.hidden = true;
+    });
+
+    if (el.installBtn) {
+      el.installBtn.addEventListener("click", async () => {
+        if (!deferredInstall) return;
+        deferredInstall.prompt();
+        try {
+          await deferredInstall.userChoice;
+        } catch (_) {
+          /* ignore */
+        }
+        deferredInstall = null;
+        el.installBtn.hidden = true;
+      });
+    }
+
+    // iOS has no beforeinstallprompt — keep howto visible (already in HTML)
+    if (!isIos() && el.installHowto) {
+      // On desktop Chrome howto still useful as fallback until prompt fires
+    }
+  }
 
   function clampBpm(n) {
     return Math.min(BPM_MAX, Math.max(BPM_MIN, Math.round(n)));
@@ -321,5 +384,6 @@
   setBpm(BPM_DEFAULT);
   setMeter(4, 4);
   bind();
+  setupInstallPrompt();
   registerSW();
 })();

@@ -79,9 +79,23 @@
       <strong>iOS 注意：</strong>Safari／主畫面 App 喺切去背景或鎖屏後，系統多數會暫停音訊。本 App 會盡力保持 AudioContext，但背景播放唔保證。建議練習時保持畫面喺前景。
     </aside>
 
-    <footer class="footer">
-      <p>可「加入主畫面」離線使用 · Add to Home Screen</p>
-    </footer>
+    <section class="install-section" id="install-section" aria-labelledby="install-title">
+      <h2 id="install-title" class="section-title">加至主畫面</h2>
+      <button type="button" class="btn btn-install" id="install-btn" hidden>
+        加至主畫面 · Install
+      </button>
+      <div class="install-howto" id="install-howto">
+        <p class="install-lead">iPhone／iPad（Safari）：</p>
+        <ol class="install-steps">
+          <li>撳底欄 <strong>分享</strong>（□↑）</li>
+          <li>向下搵，揀 <strong>加至主畫面</strong></li>
+          <li>再撳 <strong>加入</strong></li>
+        </ol>
+        <p class="install-lead">Android／Chrome：</p>
+        <p class="install-alt">撳上面掣，或瀏覽器選單 → <strong>安裝應用程式／加至主畫面</strong>。</p>
+      </div>
+      <p class="install-done" id="install-done" hidden>已喺主畫面開啟 · 可離線用</p>
+    </section>
   </div>
   <script src="app.js" defer></script>
 </body>

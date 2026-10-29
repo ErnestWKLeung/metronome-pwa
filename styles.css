@@ -316,14 +316,77 @@ body {
   color: #fca5a5;
 }
 
-.footer {
-  text-align: center;
-  color: var(--muted);
-  font-size: 0.75rem;
+.install-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.85rem 0.9rem;
+  background: var(--bg-elev);
+  border-radius: var(--radius);
+  border: 1px solid rgba(148, 163, 184, 0.25);
 }
 
-.footer p {
+.btn-install {
+  width: 100%;
+  min-height: var(--tap);
+  font-size: 1rem;
+  font-weight: 650;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+}
+
+.btn-install:active {
+  background: rgba(56, 189, 248, 0.35);
+}
+
+.install-howto {
   margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.install-lead {
+  margin: 0.4rem 0 0.25rem;
+  color: var(--fg);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.install-lead:first-child {
+  margin-top: 0;
+}
+
+.install-steps {
+  margin: 0.15rem 0 0.5rem 1.15rem;
+  padding: 0;
+}
+
+.install-steps li {
+  margin: 0.2rem 0;
+}
+
+.install-alt {
+  margin: 0;
+}
+
+.install-done {
+  margin: 0;
+  text-align: center;
+  color: var(--ok);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.install-section.is-standalone .install-howto,
+.install-section.is-standalone .btn-install {
+  display: none !important;
+}
+
+.install-section.is-standalone .install-done {
+  display: block !important;
 }
 
 @media (min-width: 480px) {
