@@ -1,5 +1,5 @@
 /* Metronome PWA — basic offline app-shell cache */
-const CACHE = "metronome-pwa-v3";
+const CACHE = "metronome-pwa-v4";
 const ASSETS = [
   "./",
   "./index.html",
@@ -42,4 +42,10 @@ self.addEventListener("fetch", (event) => {
       return cached || fetched;
     })
   );
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });

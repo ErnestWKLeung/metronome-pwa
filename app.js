@@ -47,6 +47,8 @@
     installBtn: document.getElementById("install-btn"),
     installHowto: document.getElementById("install-howto"),
     installDone: document.getElementById("install-done"),
+    updateBanner: document.getElementById("update-banner"),
+    updateReload: document.getElementById("update-reload"),
   };
 
   let deferredInstall = null;
@@ -491,12 +493,71 @@
     });
   }
 
+  function showUpdateBanner() {
+    if (el.updateBanner) el.updateBanner.hidden = false;
+  }
+
   function registerSW() {
     if (!("serviceWorker" in navigator)) return;
     // Only register when served over http(s); file:// will fail silently
     if (location.protocol === "file:") return;
+
+    // Only reload after user taps 重載／更新 (install already skipWaiting;
+    // don't surprise-reload mid-play when a new SW claims the page).
+    let userRequestedReload = false;
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (!userRequestedReload || refreshing) return;
+      refreshing = true;
+      location.reload();
+    });
+
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./sw.js").catch(() => {});
+      navigator.serviceWorker
+        .register("./sw.js")
+        .then((reg) => {
+          const promptIfWaiting = () => {
+            if (reg.waiting && navigator.serviceWorker.controller) {
+              showUpdateBanner();
+            }
+          };
+
+          promptIfWaiting();
+
+          reg.addEventListener("updatefound", () => {
+            const installing = reg.installing;
+            if (!installing) return;
+            installing.addEventListener("statechange", () => {
+              if (
+                installing.state === "installed" &&
+                navigator.serviceWorker.controller
+              ) {
+                showUpdateBanner();
+              }
+            });
+          });
+
+          // Periodic check when tab becomes visible again
+          document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "visible") {
+              reg.update().catch(() => {});
+            }
+          });
+
+          if (el.updateReload) {
+            el.updateReload.addEventListener("click", () => {
+              userRequestedReload = true;
+              const waiting = reg.waiting;
+              if (waiting) {
+                waiting.postMessage({ type: "SKIP_WAITING" });
+                // reload via controllerchange when new SW takes control
+              } else {
+                location.reload();
+              }
+            });
+          }
+        })
+        .catch(() => {});
     });
   }
 
